@@ -101,9 +101,6 @@ class FirecrawlAnalyzer:
             "location": {
                 "country": "BR",
                 "languages": ["pt-BR", "pt"]
-            },
-            "scrapeOptions": {
-                "proxy": "auto"
             }
         }
 
