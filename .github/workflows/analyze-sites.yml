@@ -1,0 +1,66 @@
+name: Analyze Auction Sites
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_size:
+        description: 'Número de sites para analisar (0 = todos)'
+        required: false
+        default: '0'
+      concurrent:
+        description: 'Requisições simultâneas'
+        required: false
+        default: '30'
+      timeout:
+        description: 'Timeout em segundos'
+        required: false
+        default: '30'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install aiohttp beautifulsoup4 lxml pandas tqdm rich
+
+      - name: Run quick config (offline)
+        run: python generate_quick_config.py
+
+      - name: Run full analysis
+        run: |
+          python run_full_analysis.py \
+            --sample ${{ github.event.inputs.sample_size || '0' }} \
+            --concurrent ${{ github.event.inputs.concurrent || '30' }} \
+            --timeout ${{ github.event.inputs.timeout || '30' }}
+        continue-on-error: true
+
+      - name: Generate HTML report
+        run: python generate_html_report.py
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: output/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          force_orphan: true
