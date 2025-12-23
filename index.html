@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Inteligente - Sites de Leilões</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        .stat-value.warning { color: #ffaa00; }
+        .stat-value.error { color: #ff4444; }
+        .stat-label { color: #888; font-size: 0.9rem; }
+
+        .site-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        .site-header {
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .site-header:hover { background: rgba(255,255,255,0.08); }
+
+        .site-name { font-weight: 600; font-size: 1.1rem; }
+        .site-domain { color: #00d4ff; font-size: 0.85rem; }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .status.success { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .status.no_patterns, .status.no_lots_found { background: rgba(255,170,0,0.2); color: #ffaa00; }
+        .status.error, .status.timeout, .status.pending { background: rgba(255,68,68,0.2); color: #ff4444; }
+
+        .site-content {
+            padding: 20px;
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .site-content.active { display: block; }
+
+        .section-title {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .paths {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .path {
+            background: rgba(0,212,255,0.15);
+            color: #00d4ff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .examples {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .example-url {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #aaa;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            word-break: break-all;
+        }
+        .example-url:last-child { border-bottom: none; }
+        .example-url a { color: #00d4ff; text-decoration: none; }
+        .example-url a:hover { text-decoration: underline; }
+
+        .crawl-config {
+            background: rgba(0,255,136,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        .crawl-config h4 { color: #00ff88; margin-bottom: 10px; }
+        .crawl-config code {
+            display: block;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #444;
+            margin-top: 30px;
+            font-size: 0.85rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.2); }
+        .filter-btn.active { background: #00d4ff; color: #000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Análise Inteligente</h1>
+        <p class="subtitle">Padrões reais descobertos em cada site de leilão</p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Sites Analisados</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Padrões Encontrados</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value warning">9</div>
+                <div class="stat-label">Sem Padrões</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value error">0</div>
+                <div class="stat-label">Erros</div>
+            </div>
+        </div>
+
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterSites('all')">Todos</button>
+            <button class="filter-btn" onclick="filterSites('success')">Com Padrões</button>
+            <button class="filter-btn" onclick="filterSites('no_patterns')">Sem Padrões</button>
+            <button class="filter-btn" onclick="filterSites('error')">Erros</button>
+        </div>
+
+        <div id="sites-container">
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">3 Torres Leilões</div>
+                        <div class="site-domain">https://www.3torresleiloes.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.3torresleiloes.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/savvn/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/savvn/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Agência Leilões</div>
+                        <div class="site-domain">https://www.agencialeilao.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.agencialeilao.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3vo9o/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3vo9o/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Agil Leilões</div>
+                        <div class="site-domain">https://www.agilleiloes.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.maraurzedoleilao.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/tt9do/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/tt9do/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Agostinho Leilões</div>
+                        <div class="site-domain">https://www.agostinholeiloes.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.agostinholeiloes.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/ykhze/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/ykhze/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Alemão Leilões</div>
+                        <div class="site-domain">https://www.alemaoleiloeiro.com.br</div>
+                        
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.alemaoleiloeiro.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/k8lm3/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/k8lm3/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Alexandre Pedrosa Leiloeiro</div>
+                        <div class="site-domain">https://www.alexandrepedrosaleiloeiro.com.br</div>
+                        
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.alexandrepedrosaleiloeiro.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3dl9t/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3dl9t/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Alves Leilões</div>
+                        <div class="site-domain">https://www.alvesleiloes.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.alvesleiloes.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/0mwkj/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/0mwkj/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="success">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">AM Leilões</div>
+                        <div class="site-domain">https://www.amleiloes.lel.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 lel.br</div>
+                    </div>
+                    <span class="status success">success</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">🔗 Estrutura de Links Descoberta</div>
+                    <div class="examples" style="margin-bottom:20px;">
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/lotes/</span>
+                            <span style="color:#888;margin-left:10px;">3 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/lotes/imovel...</div><div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/lotes/veiculo...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/licitante/</span>
+                            <span style="color:#888;margin-left:10px;">2 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/licitante/cadastro/login...</div><div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/licitante/forgot...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/leiloes/</span>
+                            <span style="color:#888;margin-left:10px;">2 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/leiloes...</div><div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/leiloes/venda-direta...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/quem-somos/</span>
+                            <span style="color:#888;margin-left:10px;">1 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/quem-somos...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/duvidas/</span>
+                            <span style="color:#888;margin-left:10px;">1 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/duvidas...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/contato/</span>
+                            <span style="color:#888;margin-left:10px;">1 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/contato...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/contato@amleiloes.lel.br/</span>
+                            <span style="color:#888;margin-left:10px;">1 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">mailto:contato@amleiloes.lel.br...</div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <span class="path">/page/</span>
+                            <span style="color:#888;margin-left:10px;">1 links</span>
+                            <div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">https://www.amleiloes.lel.br/page/politica-cookies...</div>
+                        </div>
+
+                    </div>
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/leiloes/</span><span class="path">/lotes/diversos/</span><span class="path">/lotes/imovel/</span><span class="path">/lotes/veiculo/</span>
+                    </div>
+
+                    <div class="section-title">📋 Exemplos de URLs de Lotes</div>
+                    <div class="examples">
+                        <div class="example-url"><a href="https://www.amleiloes.lel.br/leiloes/venda-direta" target="_blank">https://www.amleiloes.lel.br/leiloes/venda-direta</a></div><div class="example-url"><a href="https://www.amleiloes.lel.br/lotes/diversos" target="_blank">https://www.amleiloes.lel.br/lotes/diversos</a></div><div class="example-url"><a href="https://www.amleiloes.lel.br/lotes/imovel" target="_blank">https://www.amleiloes.lel.br/lotes/imovel</a></div><div class="example-url"><a href="https://www.amleiloes.lel.br/lotes/veiculo" target="_blank">https://www.amleiloes.lel.br/lotes/veiculo</a></div>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.amleiloes.lel.br/", "https://www.amleiloes.lel.br/contato", "https://www.amleiloes.lel.br/#"],
+    "include_paths": ["/leiloes/", "/lotes/diversos/", "/lotes/imovel/", "/lotes/veiculo/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (17 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/" target="_blank">https://www.amleiloes.lel.br/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/licitante/cadastro/login" target="_blank">https://www.amleiloes.lel.br/licitante/cadastro/login</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/quem-somos" target="_blank">https://www.amleiloes.lel.br/quem-somos</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/duvidas" target="_blank">https://www.amleiloes.lel.br/duvidas</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/contato" target="_blank">https://www.amleiloes.lel.br/contato</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/licitante/forgot" target="_blank">https://www.amleiloes.lel.br/licitante/forgot</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/#carousel-BANNER-FULL" target="_blank">https://www.amleiloes.lel.br/#carousel-BANNER-FULL</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/lotes/imovel" target="_blank">https://www.amleiloes.lel.br/lotes/imovel</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/lotes/veiculo" target="_blank">https://www.amleiloes.lel.br/lotes/veiculo</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/lotes/diversos" target="_blank">https://www.amleiloes.lel.br/lotes/diversos</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/#TodasASCategorias" target="_blank">https://www.amleiloes.lel.br/#TodasASCategorias</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/#" target="_blank">https://www.amleiloes.lel.br/#</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/leiloes" target="_blank">https://www.amleiloes.lel.br/leiloes</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/leiloes/venda-direta" target="_blank">https://www.amleiloes.lel.br/leiloes/venda-direta</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.google.com.br/maps/place/R.+Ant%C3%B4nio+Vi%C3%AAira+Dias,+556+-+Centro,+Assis+-+SP,+19814-381/@-22.6555027,-50.4133903,17z/data=!3m1!4b1!4m5!3m4!1s0x9495399feb38d943:0xd47324d594787f91!8m2!3d-22.6555027!4d-50.4112016" target="_blank">https://www.google.com.br/maps/place/R.+Ant%C3%B4nio+Vi%C3%AAira+Dias,+556+-+Centro,+Assis+-+SP,+19814-381/@-22.6555027,-50.4133903,17z/data=!3m1!4b1!4m5!3m4!1s0x9495399feb38d943:0xd47324d594787f91!8m2!3d-22.6555027!4d-50.4112016</a></div><div class="example-url" style="font-size:0.75rem;"><a href="mailto:contato@amleiloes.lel.br" target="_blank">mailto:contato@amleiloes.lel.br</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.amleiloes.lel.br/page/politica-cookies" target="_blank">https://www.amleiloes.lel.br/page/politica-cookies</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Amanda Tomazelli Leiloeira</div>
+                        <div class="site-domain">https://www.atomazellileiloeira.com.br</div>
+                        
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.atomazellileiloeira.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/f7x2y/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/f7x2y/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+            <div class="site-card" data-status="no_lots_found">
+                <div class="site-header" onclick="toggleSite(this)">
+                    <div>
+                        <div class="site-name">Amaral Leilões</div>
+                        <div class="site-domain">https://www.amaralleiloes.com.br</div>
+                        <div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 Leilão Independente</div>
+                    </div>
+                    <span class="status no_patterns">no_lots_found</span>
+                </div>
+                <div class="site-content">
+
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        <span class="path">/lote/</span><span class="path">/item/</span><span class="path">/detalhe/</span><span class="path">/peca/</span><span class="path">/leilao/</span>
+                    </div>
+
+                    <div class="crawl-config">
+                        <h4>🚀 Configuração para Crawler</h4>
+                        <code>{
+    "start_urls": ["https://www.amaralleiloes.com.br/"],
+    "include_paths": ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
+}</code>
+                    </div>
+
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links (5 encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            <div class="example-url" style="font-size:0.75rem;"><a href="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/he5un/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh" target="_blank">https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/he5un/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget" target="_blank">https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/privacypolicy/" target="_blank">https://www.cloudflare.com/pt-br/privacypolicy/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/pt-br/website-terms/" target="_blank">https://www.cloudflare.com/pt-br/website-terms/</a></div><div class="example-url" style="font-size:0.75rem;"><a href="https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j" target="_blank">https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j</a></div>
+                        </div>
+                    </details>
+
+                </div>
+            </div>
+
+        </div>
+
+        <p class="timestamp">Gerado em: 23/12/2025 às 22:49</p>
+    </div>
+
+    <script>
+        function toggleSite(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+        }
+
+        function filterSites(status) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.site-card').forEach(card => {
+                if (status === 'all') {
+                    card.style.display = '';
+                } else if (status === 'error') {
+                    card.style.display = ['error', 'timeout', 'pending'].includes(card.dataset.status) ? '' : 'none';
+                } else if (status === 'no_patterns') {
+                    card.style.display = ['no_patterns', 'no_lots_found'].includes(card.dataset.status) ? '' : 'none';
+                } else {
+                    card.style.display = card.dataset.status === status ? '' : 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

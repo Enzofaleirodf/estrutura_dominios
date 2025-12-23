@@ -1,0 +1,448 @@
+[
+  {
+    "nome": "3 Torres Leilões",
+    "dominio": "https://www.3torresleiloes.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.3torresleiloes.com.br",
+    "url_final": "https://www.3torresleiloes.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.3torresleiloes.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6777.47917175293,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/savvn/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  },
+  {
+    "nome": "Agência Leilões",
+    "dominio": "https://www.agencialeilao.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.agencialeilao.com.br",
+    "url_final": "https://www.agencialeilao.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.agencialeilao.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6895.789384841919,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3vo9o/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  },
+  {
+    "nome": "Agil Leilões",
+    "dominio": "https://www.agilleiloes.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.agilleiloes.com.br",
+    "url_final": "https://www.maraurzedoleilao.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.maraurzedoleilao.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6877.245903015137,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/tt9do/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  },
+  {
+    "nome": "Agostinho Leilões",
+    "dominio": "https://www.agostinholeiloes.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.agostinholeiloes.com.br",
+    "url_final": "https://www.agostinholeiloes.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.agostinholeiloes.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6358.989238739014,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/ykhze/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  },
+  {
+    "nome": "Alemão Leilões",
+    "dominio": "https://www.alemaoleiloeiro.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.alemaoleiloeiro.com.br",
+    "url_final": "https://www.alemaoleiloeiro.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.alemaoleiloeiro.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6285.789489746094,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/k8lm3/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": ""
+  },
+  {
+    "nome": "Alexandre Pedrosa Leiloeiro",
+    "dominio": "https://www.alexandrepedrosaleiloeiro.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.alexandrepedrosaleiloeiro.com.br",
+    "url_final": "https://www.alexandrepedrosaleiloeiro.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.alexandrepedrosaleiloeiro.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6457.078218460083,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/3dl9t/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": ""
+  },
+  {
+    "nome": "Alves Leilões",
+    "dominio": "https://www.alvesleiloes.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.alvesleiloes.com.br",
+    "url_final": "https://www.alvesleiloes.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.alvesleiloes.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6946.164608001709,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/0mwkj/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  },
+  {
+    "nome": "AM Leilões",
+    "dominio": "https://www.amleiloes.lel.br",
+    "status": "success",
+    "url_base": "https://www.amleiloes.lel.br",
+    "url_final": "https://www.amleiloes.lel.br/",
+    "listing_pages": [
+      "https://www.amleiloes.lel.br/contato",
+      "https://www.amleiloes.lel.br/#",
+      "mailto:contato@amleiloes.lel.br",
+      "https://www.amleiloes.lel.br/",
+      "https://www.amleiloes.lel.br/duvidas",
+      "https://www.amleiloes.lel.br/leiloes",
+      "https://www.amleiloes.lel.br/leiloes/venda-direta",
+      "https://www.amleiloes.lel.br/lotes/veiculo",
+      "https://www.amleiloes.lel.br/quem-somos",
+      "https://www.amleiloes.lel.br/licitante/forgot"
+    ],
+    "lot_patterns": [
+      {
+        "pattern": "/leiloes/",
+        "count": 1,
+        "confidence": 0.2,
+        "examples": [
+          "https://www.amleiloes.lel.br/leiloes/venda-direta"
+        ]
+      },
+      {
+        "pattern": "/lotes/diversos/",
+        "count": 1,
+        "confidence": 0.2,
+        "examples": [
+          "https://www.amleiloes.lel.br/lotes/diversos"
+        ]
+      },
+      {
+        "pattern": "/lotes/imovel/",
+        "count": 1,
+        "confidence": 0.2,
+        "examples": [
+          "https://www.amleiloes.lel.br/lotes/imovel"
+        ]
+      },
+      {
+        "pattern": "/lotes/veiculo/",
+        "count": 1,
+        "confidence": 0.2,
+        "examples": [
+          "https://www.amleiloes.lel.br/lotes/veiculo"
+        ]
+      }
+    ],
+    "lot_examples": [
+      "https://www.amleiloes.lel.br/leiloes/venda-direta",
+      "https://www.amleiloes.lel.br/lotes/diversos",
+      "https://www.amleiloes.lel.br/lotes/imovel",
+      "https://www.amleiloes.lel.br/lotes/veiculo"
+    ],
+    "crawl_start_urls": [
+      "https://www.amleiloes.lel.br/",
+      "https://www.amleiloes.lel.br/contato",
+      "https://www.amleiloes.lel.br/#",
+      "mailto:contato@amleiloes.lel.br"
+    ],
+    "include_paths": [
+      "/leiloes/",
+      "/lotes/diversos/",
+      "/lotes/imovel/",
+      "/lotes/veiculo/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 17,
+    "error_message": "",
+    "analysis_time_ms": 6608.613967895508,
+    "raw_links": [
+      "https://www.amleiloes.lel.br/",
+      "https://www.amleiloes.lel.br/licitante/cadastro/login",
+      "https://www.amleiloes.lel.br/quem-somos",
+      "https://www.amleiloes.lel.br/duvidas",
+      "https://www.amleiloes.lel.br/contato",
+      "https://www.amleiloes.lel.br/licitante/forgot",
+      "https://www.amleiloes.lel.br/#carousel-BANNER-FULL",
+      "https://www.amleiloes.lel.br/lotes/imovel",
+      "https://www.amleiloes.lel.br/lotes/veiculo",
+      "https://www.amleiloes.lel.br/lotes/diversos",
+      "https://www.amleiloes.lel.br/#TodasASCategorias",
+      "https://www.amleiloes.lel.br/#",
+      "https://www.amleiloes.lel.br/leiloes",
+      "https://www.amleiloes.lel.br/leiloes/venda-direta",
+      "https://www.google.com.br/maps/place/R.+Ant%C3%B4nio+Vi%C3%AAira+Dias,+556+-+Centro,+Assis+-+SP,+19814-381/@-22.6555027,-50.4133903,17z/data=!3m1!4b1!4m5!3m4!1s0x9495399feb38d943:0xd47324d594787f91!8m2!3d-22.6555027!4d-50.4112016",
+      "mailto:contato@amleiloes.lel.br",
+      "https://www.amleiloes.lel.br/page/politica-cookies"
+    ],
+    "link_structure": {
+      "/lotes/": {
+        "count": 3,
+        "examples": [
+          "https://www.amleiloes.lel.br/lotes/imovel",
+          "https://www.amleiloes.lel.br/lotes/veiculo",
+          "https://www.amleiloes.lel.br/lotes/diversos"
+        ]
+      },
+      "/licitante/": {
+        "count": 2,
+        "examples": [
+          "https://www.amleiloes.lel.br/licitante/cadastro/login",
+          "https://www.amleiloes.lel.br/licitante/forgot"
+        ]
+      },
+      "/leiloes/": {
+        "count": 2,
+        "examples": [
+          "https://www.amleiloes.lel.br/leiloes",
+          "https://www.amleiloes.lel.br/leiloes/venda-direta"
+        ]
+      },
+      "/quem-somos/": {
+        "count": 1,
+        "examples": [
+          "https://www.amleiloes.lel.br/quem-somos"
+        ]
+      },
+      "/duvidas/": {
+        "count": 1,
+        "examples": [
+          "https://www.amleiloes.lel.br/duvidas"
+        ]
+      },
+      "/contato/": {
+        "count": 1,
+        "examples": [
+          "https://www.amleiloes.lel.br/contato"
+        ]
+      },
+      "/contato@amleiloes.lel.br/": {
+        "count": 1,
+        "examples": [
+          "mailto:contato@amleiloes.lel.br"
+        ]
+      },
+      "/page/": {
+        "count": 1,
+        "examples": [
+          "https://www.amleiloes.lel.br/page/politica-cookies"
+        ]
+      }
+    },
+    "platform_detected": "lel.br"
+  },
+  {
+    "nome": "Amanda Tomazelli Leiloeira",
+    "dominio": "https://www.atomazellileiloeira.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.atomazellileiloeira.com.br",
+    "url_final": "https://www.atomazellileiloeira.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.atomazellileiloeira.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6494.307279586792,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/f7x2y/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": ""
+  },
+  {
+    "nome": "Amaral Leilões",
+    "dominio": "https://www.amaralleiloes.com.br",
+    "status": "no_lots_found",
+    "url_base": "https://www.amaralleiloes.com.br",
+    "url_final": "https://www.amaralleiloes.com.br/",
+    "listing_pages": [],
+    "lot_patterns": [],
+    "lot_examples": [],
+    "crawl_start_urls": [
+      "https://www.amaralleiloes.com.br/"
+    ],
+    "include_paths": [
+      "/lote/",
+      "/item/",
+      "/detalhe/",
+      "/peca/",
+      "/leilao/"
+    ],
+    "pages_visited": 1,
+    "links_analyzed": 5,
+    "error_message": "",
+    "analysis_time_ms": 6220.745801925659,
+    "raw_links": [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/he5un/0x4AAAAAAADnOjc0PNeA8qVm/light/fbE/new/normal?lang=auto#refresh",
+      "https://www.cloudflare.com/products/turnstile/?utm_source=turnstile&utm_campaign=widget",
+      "https://www.cloudflare.com/pt-br/privacypolicy/",
+      "https://www.cloudflare.com/pt-br/website-terms/",
+      "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=j"
+    ],
+    "link_structure": {},
+    "platform_detected": "Leilão Independente"
+  }
+]
