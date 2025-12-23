@@ -1,4 +1,4 @@
-name: Smart Analyze Sites
+name: Smart Analyze Sites (Firecrawl)
 
 on:
   workflow_dispatch:
@@ -8,9 +8,9 @@ on:
         required: false
         default: '10'
       concurrent:
-        description: 'Requisições simultâneas'
+        description: 'Requisições simultâneas (max 2 recomendado)'
         required: false
-        default: '3'
+        default: '2'
 
 permissions:
   contents: write
@@ -34,11 +34,11 @@ jobs:
         run: |
           pip install aiohttp beautifulsoup4 lxml
 
-      - name: Run Smart Analysis
+      - name: Run Firecrawl Analysis
         run: |
-          python smart_analyzer.py \
+          python firecrawl_analyzer.py \
             --limit ${{ github.event.inputs.limit || '10' }} \
-            --concurrent ${{ github.event.inputs.concurrent || '3' }}
+            --concurrent ${{ github.event.inputs.concurrent || '2' }}
 
       - name: Generate HTML Report
         run: python generate_smart_html.py
