@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Sites de Leilões</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            color: #888;
+            margin-top: 5px;
+        }
+        .groups-section {
+            margin-top: 40px;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #00d4ff;
+        }
+        .group-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .group-header {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .group-header:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .group-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .group-count {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .group-content {
+            display: none;
+            padding: 20px;
+        }
+        .group-content.active {
+            display: block;
+        }
+        .include-paths {
+            margin-bottom: 15px;
+        }
+        .include-paths span {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 3px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .sites-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .sites-table th {
+            text-align: left;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sites-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sites-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        .site-link {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+        .site-link:hover {
+            text-decoration: underline;
+        }
+        .crawl-urls {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+        .search-box::placeholder {
+            color: #666;
+        }
+        .search-box:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #00d4ff;
+        }
+        .download-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .download-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            margin: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        .timestamp {
+            text-align: center;
+            color: #666;
+            margin-top: 40px;
+            font-size: 0.9rem;
+        }
+        .expand-icon {
+            transition: transform 0.3s;
+        }
+        .group-header.active .expand-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Análise de Sites de Leilões</h1>
+        <p class="subtitle">Estrutura de URLs e configuração para crawlers</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">993</div>
+                <div class="stat-label">Sites Analisados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7</div>
+                <div class="stat-label">Grupos Identificados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Análises com Sucesso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">30</div>
+                <div class="stat-label">Sites com Erro/Timeout</div>
+            </div>
+        </div>
+
+        <input type="text" class="search-box" id="searchBox" placeholder="Buscar site por nome ou domínio...">
+
+        <div class="groups-section">
+            <h2 class="section-title">Grupos por Estrutura</h2>
+
+            <div class="group-card" data-group="sites próprios">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Sites Próprios</span>
+                    <span class="group-count">936 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lote/</span><span>/lotes/</span><span>/item/</span><span>/produto/</span><span>/bem/</span><span>/imovel/</span><span>/imoveis/</span><span>/veiculo/</span><span>/veiculos/</span><span>/detalhe/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="3 torres leilões" data-domain="https://www.3torresleiloes.com.br">
+                                <td>3 Torres Leilões</td>
+                                <td><a href="https://www.3torresleiloes.com.br" target="_blank" class="site-link">https://www.3torresleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.3torresleiloes.com.br, https://www.3torresleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="agência leilões" data-domain="https://www.agencialeilao.com.br">
+                                <td>Agência Leilões</td>
+                                <td><a href="https://www.agencialeilao.com.br" target="_blank" class="site-link">https://www.agencialeilao.com.br</a></td>
+                                <td class="crawl-urls">https://www.agencialeilao.com.br, https://www.agencialeilao.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="agil leilões" data-domain="https://www.agilleiloes.com.br">
+                                <td>Agil Leilões</td>
+                                <td><a href="https://www.agilleiloes.com.br" target="_blank" class="site-link">https://www.agilleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.agilleiloes.com.br, https://www.agilleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="agostinho leilões" data-domain="https://www.agostinholeiloes.com.br">
+                                <td>Agostinho Leilões</td>
+                                <td><a href="https://www.agostinholeiloes.com.br" target="_blank" class="site-link">https://www.agostinholeiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.agostinholeiloes.com.br, https://www.agostinholeiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="alemão leilões" data-domain="https://www.alemaoleiloeiro.com.br">
+                                <td>Alemão Leilões</td>
+                                <td><a href="https://www.alemaoleiloeiro.com.br" target="_blank" class="site-link">https://www.alemaoleiloeiro.com.br</a></td>
+                                <td class="crawl-urls">https://www.alemaoleiloeiro.com.br, https://www.alemaoleiloeiro.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="alexandre pedrosa leiloeiro" data-domain="https://www.alexandrepedrosaleiloeiro.com.br">
+                                <td>Alexandre Pedrosa Leiloeiro</td>
+                                <td><a href="https://www.alexandrepedrosaleiloeiro.com.br" target="_blank" class="site-link">https://www.alexandrepedrosaleiloeiro.com.br</a></td>
+                                <td class="crawl-urls">https://www.alexandrepedrosaleiloeiro.com.br, https://www.alexandrepedrosaleiloeiro.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="alves leilões" data-domain="https://www.alvesleiloes.com.br">
+                                <td>Alves Leilões</td>
+                                <td><a href="https://www.alvesleiloes.com.br" target="_blank" class="site-link">https://www.alvesleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.alvesleiloes.com.br, https://www.alvesleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="amanda tomazelli leiloeira" data-domain="https://www.atomazellileiloeira.com.br">
+                                <td>Amanda Tomazelli Leiloeira</td>
+                                <td><a href="https://www.atomazellileiloeira.com.br" target="_blank" class="site-link">https://www.atomazellileiloeira.com.br</a></td>
+                                <td class="crawl-urls">https://www.atomazellileiloeira.com.br, https://www.atomazellileiloeira.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="amaral leilões" data-domain="https://www.amaralleiloes.com.br">
+                                <td>Amaral Leilões</td>
+                                <td><a href="https://www.amaralleiloes.com.br" target="_blank" class="site-link">https://www.amaralleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.amaralleiloes.com.br, https://www.amaralleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="andrade leilões" data-domain="https://www.andradeleiloes.com.br">
+                                <td>Andrade Leilões</td>
+                                <td><a href="https://www.andradeleiloes.com.br" target="_blank" class="site-link">https://www.andradeleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.andradeleiloes.com.br, https://www.andradeleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="apice leilões" data-domain="https://www.apiceleiloes.com.br">
+                                <td>Apice Leilões</td>
+                                <td><a href="https://www.apiceleiloes.com.br" target="_blank" class="site-link">https://www.apiceleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.apiceleiloes.com.br, https://www.apiceleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="aragão leilões" data-domain="https://www.aragaoleiloes.com.br">
+                                <td>Aragão Leilões</td>
+                                <td><a href="https://www.aragaoleiloes.com.br" target="_blank" class="site-link">https://www.aragaoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.aragaoleiloes.com.br, https://www.aragaoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="arg leilões" data-domain="https://www.argleiloes.com.br">
+                                <td>ARG Leilões</td>
+                                <td><a href="https://www.argleiloes.com.br" target="_blank" class="site-link">https://www.argleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.argleiloes.com.br, https://www.argleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="assunção leilões" data-domain="https://www.assuncaoleiloes.com.br">
+                                <td>Assunção Leilões</td>
+                                <td><a href="https://www.assuncaoleiloes.com.br" target="_blank" class="site-link">https://www.assuncaoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.assuncaoleiloes.com.br, https://www.assuncaoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="back leilões" data-domain="https://www.backleiloes.com.br">
+                                <td>Back Leilões</td>
+                                <td><a href="https://www.backleiloes.com.br" target="_blank" class="site-link">https://www.backleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.backleiloes.com.br, https://www.backleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="benozzati" data-domain="https://www.benozzati.com.br">
+                                <td>Benozzati</td>
+                                <td><a href="https://www.benozzati.com.br" target="_blank" class="site-link">https://www.benozzati.com.br</a></td>
+                                <td class="crawl-urls">https://www.benozzati.com.br, https://www.benozzati.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="best leilões" data-domain="https://www.bestleiloes.com.br">
+                                <td>Best Leilões</td>
+                                <td><a href="https://www.bestleiloes.com.br" target="_blank" class="site-link">https://www.bestleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.bestleiloes.com.br, https://www.bestleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="bidmax" data-domain="https://www.bidmax.com.br">
+                                <td>BidMax</td>
+                                <td><a href="https://www.bidmax.com.br" target="_blank" class="site-link">https://www.bidmax.com.br</a></td>
+                                <td class="crawl-urls">https://www.bidmax.com.br, https://www.bidmax.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="brasil sul leilões" data-domain="https://www.brasilsulleiloes.com.br">
+                                <td>Brasil Sul Leilões</td>
+                                <td><a href="https://www.brasilsulleiloes.com.br" target="_blank" class="site-link">https://www.brasilsulleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.brasilsulleiloes.com.br, https://www.brasilsulleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="bronzatto leilões" data-domain="https://www.bronzattoleiloes.com.br">
+                                <td>Bronzatto Leilões</td>
+                                <td><a href="https://www.bronzattoleiloes.com.br" target="_blank" class="site-link">https://www.bronzattoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.bronzattoleiloes.com.br, https://www.bronzattoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="bruno niewinski leilões" data-domain="https://www.brunoniewinskileiloes.com.br">
+                                <td>Bruno Niewinski Leilões</td>
+                                <td><a href="https://www.brunoniewinskileiloes.com.br" target="_blank" class="site-link">https://www.brunoniewinskileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.brunoniewinskileiloes.com.br, https://www.brunoniewinskileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="cardoso leilões" data-domain="https://www.cardosoleiloes.com.br">
+                                <td>Cardoso Leilões</td>
+                                <td><a href="https://www.cardosoleiloes.com.br" target="_blank" class="site-link">https://www.cardosoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.cardosoleiloes.com.br, https://www.cardosoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="cargnelutti leilões" data-domain="https://www.cargneluttileiloes.com.br">
+                                <td>Cargnelutti Leilões</td>
+                                <td><a href="https://www.cargneluttileiloes.com.br" target="_blank" class="site-link">https://www.cargneluttileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.cargneluttileiloes.com.br, https://www.cargneluttileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ccj leilões" data-domain="https://www.ccjleiloes.com.br">
+                                <td>CCJ Leilões</td>
+                                <td><a href="https://www.ccjleiloes.com.br" target="_blank" class="site-link">https://www.ccjleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.ccjleiloes.com.br, https://www.ccjleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="cencin" data-domain="https://www.cencin.com.br">
+                                <td>Cencin</td>
+                                <td><a href="https://www.cencin.com.br" target="_blank" class="site-link">https://www.cencin.com.br</a></td>
+                                <td class="crawl-urls">https://www.cencin.com.br, https://www.cencin.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="central dos leilões" data-domain="https://www.centraldosleiloes.com.br">
+                                <td>Central dos Leilões</td>
+                                <td><a href="https://www.centraldosleiloes.com.br" target="_blank" class="site-link">https://www.centraldosleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.centraldosleiloes.com.br, https://www.centraldosleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="clic leilões" data-domain="https://www.clicleiloes.com.br">
+                                <td>Clic Leilões</td>
+                                <td><a href="https://www.clicleiloes.com.br" target="_blank" class="site-link">https://www.clicleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.clicleiloes.com.br, https://www.clicleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="colodete leilões" data-domain="https://www.colodeteleiloes.com.br">
+                                <td>Colodete Leilões</td>
+                                <td><a href="https://www.colodeteleiloes.com.br" target="_blank" class="site-link">https://www.colodeteleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.colodeteleiloes.com.br, https://www.colodeteleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="conceito leilões" data-domain="https://www.conceitoleiloes.com.br">
+                                <td>Conceito Leilões</td>
+                                <td><a href="https://www.conceitoleiloes.com.br" target="_blank" class="site-link">https://www.conceitoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.conceitoleiloes.com.br, https://www.conceitoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="construbem leilões" data-domain="https://www.construbemleiloes.com.br">
+                                <td>Construbem Leilões</td>
+                                <td><a href="https://www.construbemleiloes.com.br" target="_blank" class="site-link">https://www.construbemleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.construbemleiloes.com.br, https://www.construbemleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="cravo leilões" data-domain="https://www.cravoleiloes.com.br">
+                                <td>Cravo Leilões</td>
+                                <td><a href="https://www.cravoleiloes.com.br" target="_blank" class="site-link">https://www.cravoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.cravoleiloes.com.br, https://www.cravoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="damasio leilões" data-domain="https://www.damasioleiloes.com.br">
+                                <td>Damasio Leilões</td>
+                                <td><a href="https://www.damasioleiloes.com.br" target="_blank" class="site-link">https://www.damasioleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.damasioleiloes.com.br, https://www.damasioleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="daniel garcia leilões" data-domain="https://www.danielgarcialeiloes.com.br">
+                                <td>Daniel Garcia Leilões</td>
+                                <td><a href="https://www.danielgarcialeiloes.com.br" target="_blank" class="site-link">https://www.danielgarcialeiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.danielgarcialeiloes.com.br, https://www.danielgarcialeiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="diego leilões" data-domain="https://www.diegoleiloes.com.br">
+                                <td>Diego Leilões</td>
+                                <td><a href="https://www.diegoleiloes.com.br" target="_blank" class="site-link">https://www.diegoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.diegoleiloes.com.br, https://www.diegoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="fa leilões" data-domain="https://www.faleiloes.com.br">
+                                <td>FA Leilões</td>
+                                <td><a href="https://www.faleiloes.com.br" target="_blank" class="site-link">https://www.faleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.faleiloes.com.br, https://www.faleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ferreira leilões" data-domain="https://www.ferreiraleiloes.com.br">
+                                <td>Ferreira Leilões</td>
+                                <td><a href="https://www.ferreiraleiloes.com.br" target="_blank" class="site-link">https://www.ferreiraleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.ferreiraleiloes.com.br, https://www.ferreiraleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ferronato leilões" data-domain="https://www.ferronatoleiloes.com.br">
+                                <td>Ferronato Leilões</td>
+                                <td><a href="https://www.ferronatoleiloes.com.br" target="_blank" class="site-link">https://www.ferronatoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.ferronatoleiloes.com.br, https://www.ferronatoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="foco leilões" data-domain="https://www.focoleiloes.com.br">
+                                <td>Foco Leilões</td>
+                                <td><a href="https://www.focoleiloes.com.br" target="_blank" class="site-link">https://www.focoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.focoleiloes.com.br, https://www.focoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gl leilões" data-domain="https://www.glleiloes.com.br">
+                                <td>GL Leilões</td>
+                                <td><a href="https://www.glleiloes.com.br" target="_blank" class="site-link">https://www.glleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.glleiloes.com.br, https://www.glleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gr leilões" data-domain="https://www.grleiloes.com">
+                                <td>GR Leilões</td>
+                                <td><a href="https://www.grleiloes.com" target="_blank" class="site-link">https://www.grleiloes.com</a></td>
+                                <td class="crawl-urls">https://www.grleiloes.com, https://www.grleiloes.com/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gsp leilões" data-domain="https://www.gspleiloes.com.br">
+                                <td>GSP Leilões</td>
+                                <td><a href="https://www.gspleiloes.com.br" target="_blank" class="site-link">https://www.gspleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.gspleiloes.com.br, https://www.gspleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gutemberg araujo leilões" data-domain="https://www.gutembergaraujoleiloes.com.br">
+                                <td>Gutemberg Araujo Leilões</td>
+                                <td><a href="https://www.gutembergaraujoleiloes.com.br" target="_blank" class="site-link">https://www.gutembergaraujoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.gutembergaraujoleiloes.com.br, https://www.gutembergaraujoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="hallal leilões" data-domain="https://www.hallalleiloes.com.br">
+                                <td>Hallal Leilões</td>
+                                <td><a href="https://www.hallalleiloes.com.br" target="_blank" class="site-link">https://www.hallalleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.hallalleiloes.com.br, https://www.hallalleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="hasta leilões" data-domain="https://www.hastaleiloes.com.br">
+                                <td>Hasta Leilões</td>
+                                <td><a href="https://www.hastaleiloes.com.br" target="_blank" class="site-link">https://www.hastaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.hastaleiloes.com.br, https://www.hastaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="isabelle leilões" data-domain="https://www.isabelleiloes.com.br">
+                                <td>Isabelle Leilões</td>
+                                <td><a href="https://www.isabelleiloes.com.br" target="_blank" class="site-link">https://www.isabelleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.isabelleiloes.com.br, https://www.isabelleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="isaias leilões" data-domain="https://www.isaiasleiloes.com.br">
+                                <td>Isaias Leilões</td>
+                                <td><a href="https://www.isaiasleiloes.com.br" target="_blank" class="site-link">https://www.isaiasleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.isaiasleiloes.com.br, https://www.isaiasleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="italo leilões" data-domain="https://www.italoleiloes.com">
+                                <td>Italo Leilões</td>
+                                <td><a href="https://www.italoleiloes.com" target="_blank" class="site-link">https://www.italoleiloes.com</a></td>
+                                <td class="crawl-urls">https://www.italoleiloes.com, https://www.italoleiloes.com/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="jg cargnelutti leilões" data-domain="https://www.jgcargneluttileiloes.com.br">
+                                <td>JG Cargnelutti Leilões</td>
+                                <td><a href="https://www.jgcargneluttileiloes.com.br" target="_blank" class="site-link">https://www.jgcargneluttileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.jgcargneluttileiloes.com.br, https://www.jgcargneluttileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="joão emilio" data-domain="https://www.joaoemilio.com.br">
+                                <td>João Emilio</td>
+                                <td><a href="https://www.joaoemilio.com.br" target="_blank" class="site-link">https://www.joaoemilio.com.br</a></td>
+                                <td class="crawl-urls">https://www.joaoemilio.com.br, https://www.joaoemilio.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="joão luiz leilões" data-domain="https://www.joaoluizleiloes.com.br">
+                                <td>João Luiz Leilões</td>
+                                <td><a href="https://www.joaoluizleiloes.com.br" target="_blank" class="site-link">https://www.joaoluizleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.joaoluizleiloes.com.br, https://www.joaoluizleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="joca leilões agro" data-domain="https://www.jocaleiloesagro.com.br">
+                                <td>Joca Leilões Agro</td>
+                                <td><a href="https://www.jocaleiloesagro.com.br" target="_blank" class="site-link">https://www.jocaleiloesagro.com.br</a></td>
+                                <td class="crawl-urls">https://www.jocaleiloesagro.com.br, https://www.jocaleiloesagro.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="junkes leilões" data-domain="https://www.junkesleiloes.com.br">
+                                <td>Junkes Leilões</td>
+                                <td><a href="https://www.junkesleiloes.com.br" target="_blank" class="site-link">https://www.junkesleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.junkesleiloes.com.br, https://www.junkesleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="kildare leilões" data-domain="https://www.kildareleiloes.com.br">
+                                <td>Kildare Leilões</td>
+                                <td><a href="https://www.kildareleiloes.com.br" target="_blank" class="site-link">https://www.kildareleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.kildareleiloes.com.br, https://www.kildareleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lance leilões" data-domain="https://www.lanceleiloes.com.br">
+                                <td>Lance Leilões</td>
+                                <td><a href="https://www.lanceleiloes.com.br" target="_blank" class="site-link">https://www.lanceleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.lanceleiloes.com.br, https://www.lanceleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lance se" data-domain="https://www.lancese.com.br">
+                                <td>Lance SE</td>
+                                <td><a href="https://www.lancese.com.br" target="_blank" class="site-link">https://www.lancese.com.br</a></td>
+                                <td class="crawl-urls">https://www.lancese.com.br, https://www.lancese.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lance vip" data-domain="https://www.lancevip.com.br">
+                                <td>Lance VIP</td>
+                                <td><a href="https://www.lancevip.com.br" target="_blank" class="site-link">https://www.lancevip.com.br</a></td>
+                                <td class="crawl-urls">https://www.lancevip.com.br, https://www.lancevip.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lecape leilões" data-domain="https://www.lecapeleiloes.com.br">
+                                <td>Lecape Leilões</td>
+                                <td><a href="https://www.lecapeleiloes.com.br" target="_blank" class="site-link">https://www.lecapeleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.lecapeleiloes.com.br, https://www.lecapeleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilão pernambuco" data-domain="https://www.leilaopernambuco.com.br">
+                                <td>Leilão Pernambuco</td>
+                                <td><a href="https://www.leilaopernambuco.com.br" target="_blank" class="site-link">https://www.leilaopernambuco.com.br</a></td>
+                                <td class="crawl-urls">https://www.leilaopernambuco.com.br, https://www.leilaopernambuco.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilão santos" data-domain="https://www.leilaosantos.com.br">
+                                <td>Leilão Santos</td>
+                                <td><a href="https://www.leilaosantos.com.br" target="_blank" class="site-link">https://www.leilaosantos.com.br</a></td>
+                                <td class="crawl-urls">https://www.leilaosantos.com.br, https://www.leilaosantos.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiro judicial" data-domain="https://www.leiloeirojudicial.com.br">
+                                <td>Leiloeiro Judicial</td>
+                                <td><a href="https://www.leiloeirojudicial.com.br" target="_blank" class="site-link">https://www.leiloeirojudicial.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloeirojudicial.com.br, https://www.leiloeirojudicial.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiro nacif" data-domain="https://www.leiloeironacif.com">
+                                <td>Leiloeiro Nacif</td>
+                                <td><a href="https://www.leiloeironacif.com" target="_blank" class="site-link">https://www.leiloeironacif.com</a></td>
+                                <td class="crawl-urls">https://www.leiloeironacif.com, https://www.leiloeironacif.com/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiro online" data-domain="https://www.leiloeiro.online">
+                                <td>Leiloeiro Online</td>
+                                <td><a href="https://www.leiloeiro.online" target="_blank" class="site-link">https://www.leiloeiro.online</a></td>
+                                <td class="crawl-urls">https://www.leiloeiro.online, https://www.leiloeiro.online/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiros de brasília" data-domain="https://www.leiloeirosdebrasilia.com.br">
+                                <td>Leiloeiros de Brasília</td>
+                                <td><a href="https://www.leiloeirosdebrasilia.com.br" target="_blank" class="site-link">https://www.leiloeirosdebrasilia.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloeirosdebrasilia.com.br, https://www.leiloeirosdebrasilia.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões aguiar" data-domain="https://www.leiloesaguiar.com.br">
+                                <td>Leilões Aguiar</td>
+                                <td><a href="https://www.leiloesaguiar.com.br" target="_blank" class="site-link">https://www.leiloesaguiar.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloesaguiar.com.br, https://www.leiloesaguiar.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões ceruli" data-domain="https://www.leiloesceruli.com.br">
+                                <td>Leilões Ceruli</td>
+                                <td><a href="https://www.leiloesceruli.com.br" target="_blank" class="site-link">https://www.leiloesceruli.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloesceruli.com.br, https://www.leiloesceruli.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões costa e silva" data-domain="https://www.leiloescostaesilva.com.br">
+                                <td>Leilões Costa e Silva</td>
+                                <td><a href="https://www.leiloescostaesilva.com.br" target="_blank" class="site-link">https://www.leiloescostaesilva.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloescostaesilva.com.br, https://www.leiloescostaesilva.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões cruz" data-domain="https://www.leiloescruz.com.br">
+                                <td>Leilões Cruz</td>
+                                <td><a href="https://www.leiloescruz.com.br" target="_blank" class="site-link">https://www.leiloescruz.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloescruz.com.br, https://www.leiloescruz.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões gold" data-domain="https://www.leiloesgold.com.br">
+                                <td>Leilões Gold</td>
+                                <td><a href="https://www.leiloesgold.com.br" target="_blank" class="site-link">https://www.leiloesgold.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloesgold.com.br, https://www.leiloesgold.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões rn" data-domain="https://www.leiloesrn.com.br">
+                                <td>Leilões RN</td>
+                                <td><a href="https://www.leiloesrn.com.br" target="_blank" class="site-link">https://www.leiloesrn.com.br</a></td>
+                                <td class="crawl-urls">https://www.leiloesrn.com.br, https://www.leiloesrn.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilões tocantins" data-domain="https://www.leiloestocantins.com">
+                                <td>Leilões Tocantins</td>
+                                <td><a href="https://www.leiloestocantins.com" target="_blank" class="site-link">https://www.leiloestocantins.com</a></td>
+                                <td class="crawl-urls">https://www.leiloestocantins.com, https://www.leiloestocantins.com/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lk leilões" data-domain="https://www.lkleiloes.com.br">
+                                <td>LK Leilões</td>
+                                <td><a href="https://www.lkleiloes.com.br" target="_blank" class="site-link">https://www.lkleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.lkleiloes.com.br, https://www.lkleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lopes leilões" data-domain="https://www.lopesleiloes.net.br">
+                                <td>Lopes Leilões</td>
+                                <td><a href="https://www.lopesleiloes.net.br" target="_blank" class="site-link">https://www.lopesleiloes.net.br</a></td>
+                                <td class="crawl-urls">https://www.lopesleiloes.net.br, https://www.lopesleiloes.net.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="lotti leilões" data-domain="https://www.lottileiloes.com.br">
+                                <td>Lotti Leilões</td>
+                                <td><a href="https://www.lottileiloes.com.br" target="_blank" class="site-link">https://www.lottileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.lottileiloes.com.br, https://www.lottileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="macedo leilões" data-domain="https://www.macedoleiloes.com.br">
+                                <td>Macedo Leilões</td>
+                                <td><a href="https://www.macedoleiloes.com.br" target="_blank" class="site-link">https://www.macedoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.macedoleiloes.com.br, https://www.macedoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="machado leiloeiro" data-domain="https://www.machadoleiloeiro.com.br">
+                                <td>Machado Leiloeiro</td>
+                                <td><a href="https://www.machadoleiloeiro.com.br" target="_blank" class="site-link">https://www.machadoleiloeiro.com.br</a></td>
+                                <td class="crawl-urls">https://www.machadoleiloeiro.com.br, https://www.machadoleiloeiro.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="machado leilões" data-domain="https://www.machadoleiloes.com.br">
+                                <td>Machado Leilões</td>
+                                <td><a href="https://www.machadoleiloes.com.br" target="_blank" class="site-link">https://www.machadoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.machadoleiloes.com.br, https://www.machadoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="maráurzedo leilão" data-domain="https://www.maraurzedoleilao.com.br">
+                                <td>Maráurzedo Leilão</td>
+                                <td><a href="https://www.maraurzedoleilao.com.br" target="_blank" class="site-link">https://www.maraurzedoleilao.com.br</a></td>
+                                <td class="crawl-urls">https://www.maraurzedoleilao.com.br, https://www.maraurzedoleilao.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="marcello lemos leiloeiro" data-domain="https://www.marcellolemosleiloeiro.com.br">
+                                <td>Marcello Lemos Leiloeiro</td>
+                                <td><a href="https://www.marcellolemosleiloeiro.com.br" target="_blank" class="site-link">https://www.marcellolemosleiloeiro.com.br</a></td>
+                                <td class="crawl-urls">https://www.marcellolemosleiloeiro.com.br, https://www.marcellolemosleiloeiro.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="mg leilões rs" data-domain="https://www.mgleiloes-rs.com.br">
+                                <td>MG Leilões RS</td>
+                                <td><a href="https://www.mgleiloes-rs.com.br" target="_blank" class="site-link">https://www.mgleiloes-rs.com.br</a></td>
+                                <td class="crawl-urls">https://www.mgleiloes-rs.com.br, https://www.mgleiloes-rs.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="moraes leilões" data-domain="https://www.moraesleiloes.com.br">
+                                <td>Moraes Leilões</td>
+                                <td><a href="https://www.moraesleiloes.com.br" target="_blank" class="site-link">https://www.moraesleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.moraesleiloes.com.br, https://www.moraesleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="muller leilões" data-domain="https://www.mullerleiloes.com.br">
+                                <td>Muller Leilões</td>
+                                <td><a href="https://www.mullerleiloes.com.br" target="_blank" class="site-link">https://www.mullerleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.mullerleiloes.com.br, https://www.mullerleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="natalia leilões" data-domain="https://www.natalialeiloes.com.br">
+                                <td>Natalia Leilões</td>
+                                <td><a href="https://www.natalialeiloes.com.br" target="_blank" class="site-link">https://www.natalialeiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.natalialeiloes.com.br, https://www.natalialeiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="nogari leilões" data-domain="https://www.nogarileiloes.com.br">
+                                <td>Nogari Leilões</td>
+                                <td><a href="https://www.nogarileiloes.com.br" target="_blank" class="site-link">https://www.nogarileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.nogarileiloes.com.br, https://www.nogarileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="nosso leilão" data-domain="https://www.nossoleilao.com.br">
+                                <td>Nosso Leilão</td>
+                                <td><a href="https://www.nossoleilao.com.br" target="_blank" class="site-link">https://www.nossoleilao.com.br</a></td>
+                                <td class="crawl-urls">https://www.nossoleilao.com.br, https://www.nossoleilao.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="octavio leilões" data-domain="https://www.octavioleiloes.com.br">
+                                <td>Octavio Leilões</td>
+                                <td><a href="https://www.octavioleiloes.com.br" target="_blank" class="site-link">https://www.octavioleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.octavioleiloes.com.br, https://www.octavioleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="onebid" data-domain="https://www.onebid.com.br">
+                                <td>OneBid</td>
+                                <td><a href="https://www.onebid.com.br" target="_blank" class="site-link">https://www.onebid.com.br</a></td>
+                                <td class="crawl-urls">https://www.onebid.com.br, https://www.onebid.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="patio rocha leilões" data-domain="https://www.patiorochaleiloes.com.br">
+                                <td>Patio Rocha Leilões</td>
+                                <td><a href="https://www.patiorochaleiloes.com.br" target="_blank" class="site-link">https://www.patiorochaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.patiorochaleiloes.com.br, https://www.patiorochaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="pavani leilões" data-domain="https://www.pavanileiloes.com.br">
+                                <td>Pavani Leilões</td>
+                                <td><a href="https://www.pavanileiloes.com.br" target="_blank" class="site-link">https://www.pavanileiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.pavanileiloes.com.br, https://www.pavanileiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="pedro lopes leilões" data-domain="https://www.pedrolopesleiloes.com.br">
+                                <td>Pedro Lopes Leilões</td>
+                                <td><a href="https://www.pedrolopesleiloes.com.br" target="_blank" class="site-link">https://www.pedrolopesleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.pedrolopesleiloes.com.br, https://www.pedrolopesleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="pereira leilões ce" data-domain="https://www.pereiraleiloesce.com.br">
+                                <td>Pereira Leilões CE</td>
+                                <td><a href="https://www.pereiraleiloesce.com.br" target="_blank" class="site-link">https://www.pereiraleiloesce.com.br</a></td>
+                                <td class="crawl-urls">https://www.pereiraleiloesce.com.br, https://www.pereiraleiloesce.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="pimentel leilões" data-domain="https://www.pimentelleiloes.com.br">
+                                <td>Pimentel Leilões</td>
+                                <td><a href="https://www.pimentelleiloes.com.br" target="_blank" class="site-link">https://www.pimentelleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.pimentelleiloes.com.br, https://www.pimentelleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="plaza leilões" data-domain="https://www.plazaleiloes.com.br">
+                                <td>Plaza Leilões</td>
+                                <td><a href="https://www.plazaleiloes.com.br" target="_blank" class="site-link">https://www.plazaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.plazaleiloes.com.br, https://www.plazaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="portela leilões" data-domain="https://www.portelaleiloes.com.br">
+                                <td>Portela Leilões</td>
+                                <td><a href="https://www.portelaleiloes.com.br" target="_blank" class="site-link">https://www.portelaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.portelaleiloes.com.br, https://www.portelaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="purcena leilões" data-domain="https://www.purcenaleiloes.com.br">
+                                <td>Purcena Leilões</td>
+                                <td><a href="https://www.purcenaleiloes.com.br" target="_blank" class="site-link">https://www.purcenaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.purcenaleiloes.com.br, https://www.purcenaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="rafaela ribeiro leilões" data-domain="https://www.rafaelaribeiroleiloes.com.br">
+                                <td>Rafaela Ribeiro Leilões</td>
+                                <td><a href="https://www.rafaelaribeiroleiloes.com.br" target="_blank" class="site-link">https://www.rafaelaribeiroleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.rafaelaribeiroleiloes.com.br, https://www.rafaelaribeiroleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="raicher leilões" data-domain="https://www.raicherleiloes.com.br">
+                                <td>Raicher Leilões</td>
+                                <td><a href="https://www.raicherleiloes.com.br" target="_blank" class="site-link">https://www.raicherleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.raicherleiloes.com.br, https://www.raicherleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="realiza leilões" data-domain="https://www.realizaleiloes.com.br">
+                                <td>Realiza Leilões</td>
+                                <td><a href="https://www.realizaleiloes.com.br" target="_blank" class="site-link">https://www.realizaleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.realizaleiloes.com.br, https://www.realizaleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="rech leilões" data-domain="https://www.rechleiloes.com.br">
+                                <td>Rech Leilões</td>
+                                <td><a href="https://www.rechleiloes.com.br" target="_blank" class="site-link">https://www.rechleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.rechleiloes.com.br, https://www.rechleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="rico leilões" data-domain="https://www.ricoleiloes.com.br">
+                                <td>Rico Leilões</td>
+                                <td><a href="https://www.ricoleiloes.com.br" target="_blank" class="site-link">https://www.ricoleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.ricoleiloes.com.br, https://www.ricoleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="rj leilões" data-domain="https://www.rjleiloes.com.br">
+                                <td>RJ Leilões</td>
+                                <td><a href="https://www.rjleiloes.com.br" target="_blank" class="site-link">https://www.rjleiloes.com.br</a></td>
+                                <td class="crawl-urls">https://www.rjleiloes.com.br, https://www.rjleiloes.com.br/leiloes</td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: #888;">
+                                    ... e mais 836 sites. Baixe o JSON para ver todos.
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="plataforma lel.br">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Plataforma LEL.BR</span>
+                    <span class="group-count">44 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lote/</span><span>/lotes/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="am leilões" data-domain="https://www.amleiloes.lel.br">
+                                <td>AM Leilões</td>
+                                <td><a href="https://www.amleiloes.lel.br" target="_blank" class="site-link">https://www.amleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.amleiloes.lel.br, https://www.amleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="hammer" data-domain="https://www.hammer.lel.br">
+                                <td>Hammer</td>
+                                <td><a href="https://www.hammer.lel.br" target="_blank" class="site-link">https://www.hammer.lel.br</a></td>
+                                <td class="crawl-urls">https://www.hammer.lel.br, https://www.hammer.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="oro leilões" data-domain="https://www.oroleiloes.lel.br">
+                                <td>Oro Leilões</td>
+                                <td><a href="https://www.oroleiloes.lel.br" target="_blank" class="site-link">https://www.oroleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.oroleiloes.lel.br, https://www.oroleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="plus leilões" data-domain="https://www.plusleiloes.lel.br">
+                                <td>Plus Leilões</td>
+                                <td><a href="https://www.plusleiloes.lel.br" target="_blank" class="site-link">https://www.plusleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.plusleiloes.lel.br, https://www.plusleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="fernanda leilões" data-domain="https://www.fernandaleiloes.lel.br">
+                                <td>Fernanda Leilões</td>
+                                <td><a href="https://www.fernandaleiloes.lel.br" target="_blank" class="site-link">https://www.fernandaleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.fernandaleiloes.lel.br, https://www.fernandaleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="hasta publica" data-domain="https://www.hastapublica.lel.br">
+                                <td>Hasta Publica</td>
+                                <td><a href="https://www.hastapublica.lel.br" target="_blank" class="site-link">https://www.hastapublica.lel.br</a></td>
+                                <td class="crawl-urls">https://www.hastapublica.lel.br, https://www.hastapublica.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="jhc leiloeiro oficial" data-domain="https://www.jhcleiloeirooficial.lel.br">
+                                <td>JHC Leiloeiro Oficial</td>
+                                <td><a href="https://www.jhcleiloeirooficial.lel.br" target="_blank" class="site-link">https://www.jhcleiloeirooficial.lel.br</a></td>
+                                <td class="crawl-urls">https://www.jhcleiloeirooficial.lel.br, https://www.jhcleiloeirooficial.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="j ritta" data-domain="https://www.jritta.lel.br">
+                                <td>J Ritta</td>
+                                <td><a href="https://www.jritta.lel.br" target="_blank" class="site-link">https://www.jritta.lel.br</a></td>
+                                <td class="crawl-urls">https://www.jritta.lel.br, https://www.jritta.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiro judicial" data-domain="https://www.leiloeirojudicial.lel.br">
+                                <td>Leiloeiro Judicial</td>
+                                <td><a href="https://www.leiloeirojudicial.lel.br" target="_blank" class="site-link">https://www.leiloeirojudicial.lel.br</a></td>
+                                <td class="crawl-urls">https://www.leiloeirojudicial.lel.br, https://www.leiloeirojudicial.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ns leilões (lel.br)" data-domain="https://www.nsleiloes.lel.br">
+                                <td>NS Leilões (lel.br)</td>
+                                <td><a href="https://www.nsleiloes.lel.br" target="_blank" class="site-link">https://www.nsleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.nsleiloes.lel.br, https://www.nsleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="sb leilões" data-domain="https://www.sbleiloes.lel.br">
+                                <td>SB Leilões</td>
+                                <td><a href="https://www.sbleiloes.lel.br" target="_blank" class="site-link">https://www.sbleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.sbleiloes.lel.br, https://www.sbleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="moacira" data-domain="https://www.moacira.lel.br">
+                                <td>Moacira</td>
+                                <td><a href="https://www.moacira.lel.br" target="_blank" class="site-link">https://www.moacira.lel.br</a></td>
+                                <td class="crawl-urls">https://www.moacira.lel.br, https://www.moacira.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="jv leilões" data-domain="https://www.jvleiloes.lel.br">
+                                <td>JV Leilões</td>
+                                <td><a href="https://www.jvleiloes.lel.br" target="_blank" class="site-link">https://www.jvleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.jvleiloes.lel.br, https://www.jvleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="andréa leiloeira" data-domain="https://www.andrealeiloeira.lel.br">
+                                <td>Andréa Leiloeira</td>
+                                <td><a href="https://www.andrealeiloeira.lel.br" target="_blank" class="site-link">https://www.andrealeiloeira.lel.br</a></td>
+                                <td class="crawl-urls">https://www.andrealeiloeira.lel.br, https://www.andrealeiloeira.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="mario ricart" data-domain="https://www.marioricart.lel.br">
+                                <td>Mario Ricart</td>
+                                <td><a href="https://www.marioricart.lel.br" target="_blank" class="site-link">https://www.marioricart.lel.br</a></td>
+                                <td class="crawl-urls">https://www.marioricart.lel.br, https://www.marioricart.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="octavio vianna" data-domain="https://www.octaviovianna.lel.br">
+                                <td>Octavio Vianna</td>
+                                <td><a href="https://www.octaviovianna.lel.br" target="_blank" class="site-link">https://www.octaviovianna.lel.br</a></td>
+                                <td class="crawl-urls">https://www.octaviovianna.lel.br, https://www.octaviovianna.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="silas leiloeiro" data-domain="https://www.silasleiloeiro.lel.br">
+                                <td>Silas Leiloeiro</td>
+                                <td><a href="https://www.silasleiloeiro.lel.br" target="_blank" class="site-link">https://www.silasleiloeiro.lel.br</a></td>
+                                <td class="crawl-urls">https://www.silasleiloeiro.lel.br, https://www.silasleiloeiro.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="mauro marcello" data-domain="https://www.mauromarcello.lel.br">
+                                <td>Mauro Marcello</td>
+                                <td><a href="https://www.mauromarcello.lel.br" target="_blank" class="site-link">https://www.mauromarcello.lel.br</a></td>
+                                <td class="crawl-urls">https://www.mauromarcello.lel.br, https://www.mauromarcello.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gustavo leiloeiro" data-domain="https://www.gustavoleiloeiro.lel.br">
+                                <td>Gustavo Leiloeiro</td>
+                                <td><a href="https://www.gustavoleiloeiro.lel.br" target="_blank" class="site-link">https://www.gustavoleiloeiro.lel.br</a></td>
+                                <td class="crawl-urls">https://www.gustavoleiloeiro.lel.br, https://www.gustavoleiloeiro.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="arremate" data-domain="https://www.arremate.lel.br">
+                                <td>Arremate</td>
+                                <td><a href="https://www.arremate.lel.br" target="_blank" class="site-link">https://www.arremate.lel.br</a></td>
+                                <td class="crawl-urls">https://www.arremate.lel.br, https://www.arremate.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="flávio garcia" data-domain="https://www.flaviogarcia.lel.br">
+                                <td>Flávio Garcia</td>
+                                <td><a href="https://www.flaviogarcia.lel.br" target="_blank" class="site-link">https://www.flaviogarcia.lel.br</a></td>
+                                <td class="crawl-urls">https://www.flaviogarcia.lel.br, https://www.flaviogarcia.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="jorge brasil" data-domain="https://www.jorgebrasil.lel.br">
+                                <td>Jorge Brasil</td>
+                                <td><a href="https://www.jorgebrasil.lel.br" target="_blank" class="site-link">https://www.jorgebrasil.lel.br</a></td>
+                                <td class="crawl-urls">https://www.jorgebrasil.lel.br, https://www.jorgebrasil.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiro" data-domain="https://www.leiloeiro.lel.br">
+                                <td>Leiloeiro</td>
+                                <td><a href="https://www.leiloeiro.lel.br" target="_blank" class="site-link">https://www.leiloeiro.lel.br</a></td>
+                                <td class="crawl-urls">https://www.leiloeiro.lel.br, https://www.leiloeiro.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilofácil" data-domain="https://www.leilofacil.lel.br">
+                                <td>Leilofácil</td>
+                                <td><a href="https://www.leilofacil.lel.br" target="_blank" class="site-link">https://www.leilofacil.lel.br</a></td>
+                                <td class="crawl-urls">https://www.leilofacil.lel.br, https://www.leilofacil.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="fernando braga" data-domain="https://www.fernandobraga.lel.br">
+                                <td>Fernando Braga</td>
+                                <td><a href="https://www.fernandobraga.lel.br" target="_blank" class="site-link">https://www.fernandobraga.lel.br</a></td>
+                                <td class="crawl-urls">https://www.fernandobraga.lel.br, https://www.fernandobraga.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ana clara leilões" data-domain="https://www.anaclaraleiloes.lel.br">
+                                <td>Ana Clara Leilões</td>
+                                <td><a href="https://www.anaclaraleiloes.lel.br" target="_blank" class="site-link">https://www.anaclaraleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.anaclaraleiloes.lel.br, https://www.anaclaraleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="galpão dos leilões" data-domain="https://www.galpaodosleiloes.lel.br">
+                                <td>Galpão dos Leilões</td>
+                                <td><a href="https://www.galpaodosleiloes.lel.br" target="_blank" class="site-link">https://www.galpaodosleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.galpaodosleiloes.lel.br, https://www.galpaodosleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="gondolo leilões" data-domain="https://www.gondololeiloes.lel.br">
+                                <td>Gondolo Leilões</td>
+                                <td><a href="https://www.gondololeiloes.lel.br" target="_blank" class="site-link">https://www.gondololeiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.gondololeiloes.lel.br, https://www.gondololeiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="jonas" data-domain="https://www.jonas.lel.br">
+                                <td>Jonas</td>
+                                <td><a href="https://www.jonas.lel.br" target="_blank" class="site-link">https://www.jonas.lel.br</a></td>
+                                <td class="crawl-urls">https://www.jonas.lel.br, https://www.jonas.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="luiz sérgio pereira" data-domain="https://www.luizsergiopereira.lel.br">
+                                <td>Luiz Sérgio Pereira</td>
+                                <td><a href="https://www.luizsergiopereira.lel.br" target="_blank" class="site-link">https://www.luizsergiopereira.lel.br</a></td>
+                                <td class="crawl-urls">https://www.luizsergiopereira.lel.br, https://www.luizsergiopereira.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="martha padilha leiloeira" data-domain="https://www.marthapadilhaleiloeira.lel.br">
+                                <td>Martha Padilha Leiloeira</td>
+                                <td><a href="https://www.marthapadilhaleiloeira.lel.br" target="_blank" class="site-link">https://www.marthapadilhaleiloeira.lel.br</a></td>
+                                <td class="crawl-urls">https://www.marthapadilhaleiloeira.lel.br, https://www.marthapadilhaleiloeira.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="moura azevedo leilões" data-domain="https://www.mouraazevedoleiloes.lel.br">
+                                <td>Moura Azevedo Leilões</td>
+                                <td><a href="https://www.mouraazevedoleiloes.lel.br" target="_blank" class="site-link">https://www.mouraazevedoleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.mouraazevedoleiloes.lel.br, https://www.mouraazevedoleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="valmir matos" data-domain="https://www.valmirmatos.lel.br">
+                                <td>Valmir Matos</td>
+                                <td><a href="https://www.valmirmatos.lel.br" target="_blank" class="site-link">https://www.valmirmatos.lel.br</a></td>
+                                <td class="crawl-urls">https://www.valmirmatos.lel.br, https://www.valmirmatos.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="alan leiloeiro" data-domain="https://www.alanleiloeiro.lel.br/">
+                                <td>Alan Leiloeiro</td>
+                                <td><a href="https://www.alanleiloeiro.lel.br/" target="_blank" class="site-link">https://www.alanleiloeiro.lel.br/</a></td>
+                                <td class="crawl-urls">https://www.alanleiloeiro.lel.br, https://www.alanleiloeiro.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leilobras" data-domain="https://www.leilobras.lel.br">
+                                <td>LeiloBras</td>
+                                <td><a href="https://www.leilobras.lel.br" target="_blank" class="site-link">https://www.leilobras.lel.br</a></td>
+                                <td class="crawl-urls">https://www.leilobras.lel.br, https://www.leilobras.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="bernardo lopes" data-domain="https://www.bernardolopes.lel.br">
+                                <td>Bernardo Lopes</td>
+                                <td><a href="https://www.bernardolopes.lel.br" target="_blank" class="site-link">https://www.bernardolopes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.bernardolopes.lel.br, https://www.bernardolopes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="de werk" data-domain="https://www.dewerk.lel.br">
+                                <td>De Werk</td>
+                                <td><a href="https://www.dewerk.lel.br" target="_blank" class="site-link">https://www.dewerk.lel.br</a></td>
+                                <td class="crawl-urls">https://www.dewerk.lel.br, https://www.dewerk.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="leiloeiros" data-domain="https://www.leiloeiros.lel.br">
+                                <td>Leiloeiros</td>
+                                <td><a href="https://www.leiloeiros.lel.br" target="_blank" class="site-link">https://www.leiloeiros.lel.br</a></td>
+                                <td class="crawl-urls">https://www.leiloeiros.lel.br, https://www.leiloeiros.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="pietoso leilões" data-domain="https://www.pietosoleiloes.lel.br">
+                                <td>Pietoso Leilões</td>
+                                <td><a href="https://www.pietosoleiloes.lel.br" target="_blank" class="site-link">https://www.pietosoleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.pietosoleiloes.lel.br, https://www.pietosoleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="kronberg" data-domain="https://www.kronberg.lel.br">
+                                <td>Kronberg</td>
+                                <td><a href="https://www.kronberg.lel.br" target="_blank" class="site-link">https://www.kronberg.lel.br</a></td>
+                                <td class="crawl-urls">https://www.kronberg.lel.br, https://www.kronberg.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="bertoncello" data-domain="https://www.bertoncello.lel.br">
+                                <td>Bertoncello</td>
+                                <td><a href="https://www.bertoncello.lel.br" target="_blank" class="site-link">https://www.bertoncello.lel.br</a></td>
+                                <td class="crawl-urls">https://www.bertoncello.lel.br, https://www.bertoncello.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="q leilão" data-domain="https://www.qleilao.lel.br">
+                                <td>Q Leilão</td>
+                                <td><a href="https://www.qleilao.lel.br" target="_blank" class="site-link">https://www.qleilao.lel.br</a></td>
+                                <td class="crawl-urls">https://www.qleilao.lel.br, https://www.qleilao.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="barcellos leilões" data-domain="https://www.barcellos.lel.br">
+                                <td>Barcellos Leilões</td>
+                                <td><a href="https://www.barcellos.lel.br" target="_blank" class="site-link">https://www.barcellos.lel.br</a></td>
+                                <td class="crawl-urls">https://www.barcellos.lel.br, https://www.barcellos.lel.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="sa leilões" data-domain="https://www.saleiloes.lel.br">
+                                <td>SA Leilões</td>
+                                <td><a href="https://www.saleiloes.lel.br" target="_blank" class="site-link">https://www.saleiloes.lel.br</a></td>
+                                <td class="crawl-urls">https://www.saleiloes.lel.br, https://www.saleiloes.lel.br/leiloes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="plataforma leilao.br">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Plataforma LEILAO.BR</span>
+                    <span class="group-count">9 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lote/</span><span>/item/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="blm leilão" data-domain="https://www.blm.leilao.br">
+                                <td>BLM Leilão</td>
+                                <td><a href="https://www.blm.leilao.br" target="_blank" class="site-link">https://www.blm.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.blm.leilao.br, https://www.blm.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="ns leilões (leilao.br)" data-domain="https://www.nsleiloes.leilao.br">
+                                <td>NS Leilões (leilao.br)</td>
+                                <td><a href="https://www.nsleiloes.leilao.br" target="_blank" class="site-link">https://www.nsleiloes.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.nsleiloes.leilao.br, https://www.nsleiloes.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="oscar leilão" data-domain="https://www.oscar.leilao.br">
+                                <td>Oscar Leilão</td>
+                                <td><a href="https://www.oscar.leilao.br" target="_blank" class="site-link">https://www.oscar.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.oscar.leilao.br, https://www.oscar.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="rz leilão" data-domain="https://www.rz.leilao.br">
+                                <td>RZ Leilão</td>
+                                <td><a href="https://www.rz.leilao.br" target="_blank" class="site-link">https://www.rz.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.rz.leilao.br, https://www.rz.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="scheid leilão" data-domain="https://www.scheid.leilao.br">
+                                <td>Scheid Leilão</td>
+                                <td><a href="https://www.scheid.leilao.br" target="_blank" class="site-link">https://www.scheid.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.scheid.leilao.br, https://www.scheid.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="custódio leilões" data-domain="https://www.custodioleiloes.leilao.br">
+                                <td>Custódio Leilões</td>
+                                <td><a href="https://www.custodioleiloes.leilao.br" target="_blank" class="site-link">https://www.custodioleiloes.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.custodioleiloes.leilao.br, https://www.custodioleiloes.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="donizette leilões" data-domain="https://www.donizetteleiloes.leilao.br">
+                                <td>Donizette Leilões</td>
+                                <td><a href="https://www.donizetteleiloes.leilao.br" target="_blank" class="site-link">https://www.donizetteleiloes.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.donizetteleiloes.leilao.br, https://www.donizetteleiloes.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="a leiloeira" data-domain="https://www.aleiloeira.leilao.br">
+                                <td>A Leiloeira</td>
+                                <td><a href="https://www.aleiloeira.leilao.br" target="_blank" class="site-link">https://www.aleiloeira.leilao.br</a></td>
+                                <td class="crawl-urls">https://www.aleiloeira.leilao.br, https://www.aleiloeira.leilao.br/leiloes</td>
+                            </tr>
+
+                            <tr class="site-row" data-name="confiança leilões" data-domain="https://www.confiancaleiloes.leilao.br/">
+                                <td>Confiança Leilões</td>
+                                <td><a href="https://www.confiancaleiloes.leilao.br/" target="_blank" class="site-link">https://www.confiancaleiloes.leilao.br/</a></td>
+                                <td class="crawl-urls">https://www.confiancaleiloes.leilao.br, https://www.confiancaleiloes.leilao.br/leiloes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="bom valor / mercado bomvalor">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Bom Valor / Mercado Bomvalor</span>
+                    <span class="group-count">1 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lote/</span><span>/imoveis/</span><span>/veiculos/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="mercado bomvalor" data-domain="https://mercado.bomvalor.com.br/">
+                                <td>Mercado Bomvalor</td>
+                                <td><a href="https://mercado.bomvalor.com.br/" target="_blank" class="site-link">https://mercado.bomvalor.com.br/</a></td>
+                                <td class="crawl-urls">https://mercado.bomvalor.com.br, https://mercado.bomvalor.com.br/leiloes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="portal zuk">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Portal Zuk</span>
+                    <span class="group-count">1 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/imovel/</span><span>/veiculo/</span><span>/bem/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="portal zuk" data-domain="https://www.portalzuk.com.br">
+                                <td>Portal Zuk</td>
+                                <td><a href="https://www.portalzuk.com.br" target="_blank" class="site-link">https://www.portalzuk.com.br</a></td>
+                                <td class="crawl-urls">https://www.portalzuk.com.br, https://www.portalzuk.com.br/imoveis</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="copart">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Copart</span>
+                    <span class="group-count">1 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lot/</span><span>/lote/</span><span>/veiculo/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="copart" data-domain="https://www.copart.com.br">
+                                <td>Copart</td>
+                                <td><a href="https://www.copart.com.br" target="_blank" class="site-link">https://www.copart.com.br</a></td>
+                                <td class="crawl-urls">https://www.copart.com.br, https://www.copart.com.br/leiloes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="group-card" data-group="superbid">
+                <div class="group-header" onclick="toggleGroup(this)">
+                    <span class="group-name">Superbid</span>
+                    <span class="group-count">1 sites</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <div class="include-paths">
+                        <strong>Include Paths (filtrar lotes):</strong><br>
+                        <span>/lote/</span><span>/lot/</span>
+                    </div>
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Domínio</th>
+                                <th>Crawl URLs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="site-row" data-name="superbid" data-domain="https://www.superbid.net">
+                                <td>Superbid</td>
+                                <td><a href="https://www.superbid.net" target="_blank" class="site-link">https://www.superbid.net</a></td>
+                                <td class="crawl-urls">https://www.superbid.net, https://www.superbid.net/leiloes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="download-section">
+            <h2 class="section-title" style="text-align: center; border: none;">Download dos Dados</h2>
+            <a href="config_rapida.json" download class="download-btn">📦 Baixar JSON Completo</a>
+            <a href="config_rapida.csv" download class="download-btn">📊 Baixar CSV</a>
+        </div>
+
+        <p class="timestamp">Gerado em: 23/12/2025 às 19:56</p>
+    </div>
+
+    <script>
+        function toggleGroup(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+        }
+
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.site-row');
+            const groups = document.querySelectorAll('.group-card');
+
+            if (query.length < 2) {
+                rows.forEach(row => row.style.display = '');
+                groups.forEach(group => group.style.display = '');
+                return;
+            }
+
+            groups.forEach(group => {
+                let hasVisibleRows = false;
+                const groupRows = group.querySelectorAll('.site-row');
+
+                groupRows.forEach(row => {
+                    const name = row.dataset.name || '';
+                    const domain = row.dataset.domain || '';
+
+                    if (name.includes(query) || domain.includes(query)) {
+                        row.style.display = '';
+                        hasVisibleRows = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                group.style.display = hasVisibleRows ? '' : 'none';
+
+                if (hasVisibleRows && query.length > 0) {
+                    group.querySelector('.group-header').classList.add('active');
+                    group.querySelector('.group-content').classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
