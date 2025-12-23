@@ -114,12 +114,24 @@ class SmartSiteAnalyzer:
     """Analisador inteligente de sites de leilão"""
 
     def __init__(self, timeout: int = 30, max_pages: int = 10):
-        self.timeout = aiohttp.ClientTimeout(total=timeout)
+        self.timeout = aiohttp.ClientTimeout(total=timeout, connect=15)
         self.max_pages = max_pages
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.95,en-BR;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "Referer": "https://www.google.com.br/",
         }
 
     async def analyze_site(self, dominio: str, nome: str) -> SmartAnalysisResult:
@@ -145,12 +157,15 @@ class SmartSiteAnalyzer:
 
                 # 1. Acessa página inicial
                 print(f"  [1/4] Acessando {dominio}...")
-                home_html, final_url = await self._fetch_page(session, dominio)
+                home_html, final_url, error_msg = await self._fetch_page(session, dominio)
 
                 if not home_html:
                     result.status = "error"
-                    result.error_message = "Não foi possível acessar a página inicial"
+                    result.error_message = error_msg or "Não foi possível acessar a página inicial"
+                    print(f"  ❌ ERRO: {result.error_message}")
                     return result
+
+                print(f"  ✓ Página carregada: {final_url}")
 
                 result.url_final = final_url
                 result.pages_visited = 1
@@ -181,7 +196,7 @@ class SmartSiteAnalyzer:
                         continue
                     visited.add(nav_url)
 
-                    page_html, _ = await self._fetch_page(session, nav_url)
+                    page_html, _, _ = await self._fetch_page(session, nav_url, retries=1)
                     if page_html:
                         result.pages_visited += 1
                         lot_candidates = self._find_lot_links(page_html, nav_url, base_domain)
@@ -189,8 +204,9 @@ class SmartSiteAnalyzer:
 
                         if lot_candidates:
                             result.listing_pages.append(nav_url)
+                            print(f"  ✓ Encontrados {len(lot_candidates)} lotes em {nav_url}")
 
-                    await asyncio.sleep(0.3)  # Rate limiting
+                    await asyncio.sleep(0.5)  # Rate limiting
 
                 result.links_analyzed = len(all_lot_candidates)
 
@@ -216,16 +232,38 @@ class SmartSiteAnalyzer:
         result.analysis_time_ms = (time.time() - start_time) * 1000
         return result
 
-    async def _fetch_page(self, session: aiohttp.ClientSession, url: str) -> Tuple[Optional[str], str]:
-        """Busca uma página e retorna o HTML"""
-        try:
-            async with session.get(url, allow_redirects=True) as response:
-                if response.status == 200:
-                    html = await response.text()
-                    return html, str(response.url)
-                return None, url
-        except Exception:
-            return None, url
+    async def _fetch_page(self, session: aiohttp.ClientSession, url: str, retries: int = 2) -> Tuple[Optional[str], str, str]:
+        """Busca uma página e retorna o HTML + erro detalhado"""
+        last_error = ""
+
+        for attempt in range(retries + 1):
+            try:
+                async with session.get(url, allow_redirects=True, ssl=False) as response:
+                    if response.status == 200:
+                        html = await response.text()
+                        return html, str(response.url), ""
+                    elif response.status == 403:
+                        last_error = f"HTTP 403 Forbidden - Site bloqueou acesso"
+                    elif response.status == 503:
+                        last_error = f"HTTP 503 - Cloudflare/proteção ativa"
+                    else:
+                        last_error = f"HTTP {response.status}"
+
+            except aiohttp.ClientConnectorError as e:
+                last_error = f"Conexão falhou: {str(e)[:80]}"
+            except aiohttp.ServerTimeoutError:
+                last_error = "Timeout - servidor não respondeu"
+            except aiohttp.ClientSSLError as e:
+                last_error = f"Erro SSL: {str(e)[:80]}"
+            except asyncio.TimeoutError:
+                last_error = "Timeout na requisição"
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {str(e)[:80]}"
+
+            if attempt < retries:
+                await asyncio.sleep(1)  # Espera antes de retry
+
+        return None, url, last_error
 
     def _find_navigation_links(self, html: str, base_url: str, base_domain: str) -> List[str]:
         """Encontra links de navegação que levam a páginas de listagem"""
