@@ -1,0 +1,57 @@
+name: Smart Analyze Sites
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Número de sites para analisar (0 = todos)'
+        required: false
+        default: '10'
+      concurrent:
+        description: 'Requisições simultâneas'
+        required: false
+        default: '3'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  smart-analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install aiohttp beautifulsoup4 lxml
+
+      - name: Run Smart Analysis
+        run: |
+          python smart_analyzer.py \
+            --limit ${{ github.event.inputs.limit || '10' }} \
+            --concurrent ${{ github.event.inputs.concurrent || '3' }}
+
+      - name: Generate HTML Report
+        run: python generate_smart_html.py
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-analysis-results
+          path: output/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          force_orphan: true
