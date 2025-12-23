@@ -98,12 +98,9 @@ class FirecrawlAnalyzer:
             "onlyMainContent": False,
             "waitFor": 3000,
             "timeout": 30000,
-            "location": {
-                "country": "BR",
-                "languages": ["pt-BR", "pt"]
-            },
-            "scrapeOptions": {
-                "proxy": "auto"
+            "headers": {
+                "Accept-Language": "pt-BR,pt;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
             }
         }
 

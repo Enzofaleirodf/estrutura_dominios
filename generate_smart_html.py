@@ -20,8 +20,8 @@ def generate_html(results):
     """Gera HTML interativo com os resultados"""
 
     success = [r for r in results if r['status'] == 'success']
-    no_patterns = [r for r in results if r['status'] == 'no_patterns']
-    errors = [r for r in results if r['status'] in ['error', 'timeout']]
+    no_patterns = [r for r in results if r['status'] in ['no_patterns', 'no_lots_found']]
+    errors = [r for r in results if r['status'] in ['error', 'timeout', 'pending']]
 
     html = f'''<!DOCTYPE html>
 <html lang="pt-BR">
@@ -99,8 +99,8 @@ def generate_html(results):
             font-weight: 500;
         }}
         .status.success {{ background: rgba(0,255,136,0.2); color: #00ff88; }}
-        .status.no_patterns {{ background: rgba(255,170,0,0.2); color: #ffaa00; }}
-        .status.error, .status.timeout {{ background: rgba(255,68,68,0.2); color: #ff4444; }}
+        .status.no_patterns, .status.no_lots_found {{ background: rgba(255,170,0,0.2); color: #ffaa00; }}
+        .status.error, .status.timeout, .status.pending {{ background: rgba(255,68,68,0.2); color: #ff4444; }}
 
         .site-content {{
             padding: 20px;
@@ -228,7 +228,7 @@ def generate_html(results):
 '''
 
     for r in results:
-        status_class = r['status'] if r['status'] in ['success', 'no_patterns'] else 'error'
+        status_class = 'success' if r['status'] == 'success' else 'no_patterns' if r['status'] in ['no_patterns', 'no_lots_found'] else 'error'
 
         html += f'''
             <div class="site-card" data-status="{r['status']}">
@@ -300,7 +300,9 @@ def generate_html(results):
                 if (status === 'all') {{
                     card.style.display = '';
                 }} else if (status === 'error') {{
-                    card.style.display = ['error', 'timeout'].includes(card.dataset.status) ? '' : 'none';
+                    card.style.display = ['error', 'timeout', 'pending'].includes(card.dataset.status) ? '' : 'none';
+                }} else if (status === 'no_patterns') {{
+                    card.style.display = ['no_patterns', 'no_lots_found'].includes(card.dataset.status) ? '' : 'none';
                 }} else {{
                     card.style.display = card.dataset.status === status ? '' : 'none';
                 }}
