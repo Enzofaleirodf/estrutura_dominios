@@ -26,22 +26,61 @@ FIRECRAWL_API_KEY = "fc-19e8c1585f334b02bdbc0ee89d9c9386"
 FIRECRAWL_API_URL = "https://api.firecrawl.dev/v1/scrape"
 
 
-# Padrões de URL que indicam lotes
+# Padrões de URL que indicam lotes - MUITO mais abrangente
 LOT_URL_PATTERNS = [
+    # Português - lotes/items
     r'/lotes?[/-]',
+    r'/lote[/-]?\d',
     r'/items?[/-]',
+    r'/item[/-]?\d',
     r'/produtos?[/-]',
+    r'/produto[/-]?\d',
     r'/bens?[/-]',
+    r'/bem[/-]?\d',
+    r'/pecas?[/-]',
+    r'/peca[/-]?\d',
+
+    # Imóveis/Veículos
     r'/imove[il]s?[/-]',
-    r'/imoveis[/-]',
+    r'/imoveis?[/-]',
+    r'/imovel[/-]?\d',
     r'/veiculos?[/-]',
+    r'/veiculo[/-]?\d',
+    r'/automoveis?[/-]',
+    r'/automovel[/-]?\d',
+
+    # Leilão
+    r'/leilao[/-]?\d',
+    r'/leiloes[/-]',
+    r'/auction[/-]',
+    r'/evento[/-]?\d',
+
+    # Detalhes
     r'/detalhes?[/-]',
-    r'/auction[/-]?item',
+    r'/detalhe[/-]?\d',
+    r'/ver[/-]',
+    r'/visualizar[/-]',
+
+    # Inglês
     r'/lot[/-]',
     r'/property[/-]',
     r'/vehicle[/-]',
-    r'\?.*id[_-]?(lote|item|produto)',
-    r'/\d{3,}',  # IDs numéricos
+    r'/auction[/-]?item',
+
+    # Query strings comuns
+    r'\?(.*&)?id[_-]?(lote|item|produto|bem|peca)',
+    r'\?(.*&)?cod(igo)?=',
+    r'\?(.*&)?lote=',
+    r'\?(.*&)?item=',
+
+    # IDs numéricos em paths
+    r'/\d{3,}$',
+    r'/\d{3,}/',
+    r'/\d{3,}\?',
+
+    # Slugs com números
+    r'/[a-z]+-\d+',
+    r'/\d+-[a-z]+',
 ]
 
 # Keywords para identificar links de lotes
@@ -77,6 +116,8 @@ class SmartAnalysisResult:
     error_message: str = ""
     analysis_time_ms: float = 0
     raw_links: List[str] = field(default_factory=list)
+    link_structure: Dict = field(default_factory=dict)  # Estrutura de todos os links
+    platform_detected: str = ""  # Plataforma detectada (lel.br, superbid, etc)
 
 
 class FirecrawlAnalyzer:
@@ -205,11 +246,44 @@ class FirecrawlAnalyzer:
                 print(f"  ✓ Páginas de listagem: {len(result.listing_pages)}")
                 print(f"  ✓ Links de lotes: {len(result.lot_examples)}")
 
-                # 3. Extrai padrões
-                print(f"  [3/3] Extraindo padrões...")
+                # 3. Analisa estrutura de TODOS os links
+                print(f"  [3/4] Analisando estrutura de links...")
+                link_structure = self._analyze_all_links(all_links, base_domain)
+                result.link_structure = link_structure
+
+                # Mostra estrutura encontrada
+                if link_structure:
+                    print(f"  ✓ Estruturas de URL encontradas:")
+                    for path, info in list(link_structure.items())[:5]:
+                        print(f"      {path} -> {info['count']} links")
+
+                # 4. Extrai padrões dos lotes identificados
+                print(f"  [4/4] Extraindo padrões de lotes...")
                 patterns = self._extract_patterns(result.lot_examples)
                 result.lot_patterns = patterns
                 result.include_paths = [p["pattern"] for p in patterns]
+
+                # Se não encontrou lotes com padrões conhecidos, usa estrutura mais frequente
+                if not result.lot_examples and link_structure:
+                    # Pega os paths mais frequentes que parecem ser conteúdo
+                    content_paths = []
+                    for path, info in link_structure.items():
+                        # Ignora paths comuns de navegação
+                        if path.lower() not in ['/sobre/', '/contato/', '/login/', '/cadastro/',
+                                                 '/faq/', '/ajuda/', '/termos/', '/privacidade/',
+                                                 '/css/', '/js/', '/img/', '/images/', '/assets/']:
+                            content_paths.append((path, info))
+
+                    if content_paths:
+                        # Usa os paths com mais links como include_paths
+                        result.include_paths = [p[0] for p in content_paths[:5]]
+                        result.lot_examples = []
+                        for p, info in content_paths[:3]:
+                            result.lot_examples.extend(info['examples'][:3])
+                        print(f"  ⚠ Usando estrutura detectada automaticamente: {result.include_paths}")
+
+                # Detecta plataforma
+                result.platform_detected = self._detect_platform(dominio, result.url_final)
 
                 # Gera config de crawl
                 crawl_urls = [result.url_final]
@@ -218,12 +292,16 @@ class FirecrawlAnalyzer:
                         crawl_urls.append(listing)
                 result.crawl_start_urls = crawl_urls
 
-                # Fallback se não encontrou padrões
+                # Fallback final se não encontrou nada
                 if not result.include_paths:
-                    result.include_paths = ["/lote/", "/item/", "/detalhe/", "/imovel/", "/veiculo/"]
+                    result.include_paths = ["/lote/", "/item/", "/detalhe/", "/peca/", "/leilao/"]
 
-                result.status = "success" if result.lot_examples else "no_lots_found"
-                print(f"  ✓ Padrões encontrados: {result.include_paths}")
+                # Status: success se encontrou estrutura, no_lots_found se só usou fallback
+                has_structure = bool(result.lot_examples) or bool(link_structure)
+                result.status = "success" if has_structure else "no_lots_found"
+                print(f"  ✓ Padrões finais: {result.include_paths}")
+                if result.platform_detected:
+                    print(f"  ✓ Plataforma: {result.platform_detected}")
 
         except Exception as e:
             result.status = "error"
@@ -262,6 +340,7 @@ class FirecrawlAnalyzer:
             return []
 
         path_counts = defaultdict(int)
+        path_examples = defaultdict(list)
 
         for url in urls:
             try:
@@ -276,6 +355,8 @@ class FirecrawlAnalyzer:
                 parts = normalized.split('/{')[0]
                 if parts and parts != '/':
                     path_counts[parts + '/'] += 1
+                    if len(path_examples[parts + '/']) < 3:
+                        path_examples[parts + '/'].append(url)
             except:
                 pass
 
@@ -285,10 +366,82 @@ class FirecrawlAnalyzer:
             patterns.append({
                 "pattern": pattern,
                 "count": count,
-                "confidence": min(count / 5, 1.0)
+                "confidence": min(count / 5, 1.0),
+                "examples": path_examples[pattern]
             })
 
         return patterns[:10]
+
+    def _detect_platform(self, original_domain: str, final_url: str) -> str:
+        """Detecta a plataforma de leilão baseado no domínio"""
+        domain_lower = original_domain.lower()
+        final_lower = final_url.lower() if final_url else ""
+
+        # Plataformas conhecidas
+        if '.lel.br' in domain_lower or '.lel.br' in final_lower:
+            return "lel.br"
+        if 'superbid' in domain_lower or 'superbid' in final_lower:
+            return "Superbid"
+        if 'bomvalor' in domain_lower or 'bomvalor' in final_lower:
+            return "Bomvalor"
+        if 'leilaovip' in domain_lower or 'leilaovip' in final_lower:
+            return "LeilaoVIP"
+        if 'soldoonline' in domain_lower or 'soldoonline' in final_lower:
+            return "SoldoOnline"
+        if 'lancenoleilao' in domain_lower or 'lancenoleilao' in final_lower:
+            return "LanceNoLeilao"
+        if 'megaleiloes' in domain_lower or 'megaleiloes' in final_lower:
+            return "MegaLeiloes"
+        if 'zukerman' in domain_lower or 'zukerman' in final_lower:
+            return "Zukerman"
+        if 'leilomaster' in domain_lower or 'leilomaster' in final_lower:
+            return "Leilomaster"
+
+        # Detecta por sufixo do domínio
+        if domain_lower.endswith('.lel.br'):
+            return "lel.br"
+        if 'leilao' in domain_lower or 'leiloes' in domain_lower:
+            return "Leilão Independente"
+
+        return ""
+
+    def _analyze_all_links(self, links: List[str], base_domain: str) -> Dict:
+        """Analisa TODOS os links e agrupa por estrutura de path"""
+        path_structure = defaultdict(list)
+
+        for link in links:
+            if not isinstance(link, str):
+                continue
+
+            try:
+                parsed = urlparse(link)
+
+                # Só links internos
+                if parsed.netloc and not self._is_same_domain(parsed.netloc, base_domain):
+                    continue
+
+                path = parsed.path
+                if not path or path == '/':
+                    continue
+
+                # Extrai estrutura do path (primeiro segmento)
+                segments = [s for s in path.split('/') if s]
+                if segments:
+                    first_segment = '/' + segments[0] + '/'
+                    path_structure[first_segment].append(link)
+
+            except:
+                continue
+
+        # Ordena por quantidade de links
+        result = {}
+        for pattern, urls in sorted(path_structure.items(), key=lambda x: -len(x[1])):
+            result[pattern] = {
+                "count": len(urls),
+                "examples": urls[:5]
+            }
+
+        return result
 
 
 async def run_analysis(sites: List[Dict], max_concurrent: int = 2) -> List[SmartAnalysisResult]:

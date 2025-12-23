@@ -229,6 +229,8 @@ def generate_html(results):
 
     for r in results:
         status_class = 'success' if r['status'] == 'success' else 'no_patterns' if r['status'] in ['no_patterns', 'no_lots_found'] else 'error'
+        platform = r.get('platform_detected', '')
+        link_structure = r.get('link_structure', {})
 
         html += f'''
             <div class="site-card" data-status="{r['status']}">
@@ -236,42 +238,75 @@ def generate_html(results):
                     <div>
                         <div class="site-name">{r['nome']}</div>
                         <div class="site-domain">{r['dominio']}</div>
+                        {f'<div style="font-size:0.75rem;color:#00ff88;margin-top:3px;">📦 {platform}</div>' if platform else ''}
                     </div>
                     <span class="status {status_class}">{r['status']}</span>
                 </div>
                 <div class="site-content">
 '''
 
-        if r['status'] == 'success' or r['include_paths']:
-            html += f'''
-                    <div class="section-title">Include Paths (usar no crawler)</div>
-                    <div class="paths">
-                        {''.join(f'<span class="path">{p}</span>' for p in r['include_paths'])}
+        # Mostra estrutura de links descoberta
+        if link_structure:
+            html += '''
+                    <div class="section-title">🔗 Estrutura de Links Descoberta</div>
+                    <div class="examples" style="margin-bottom:20px;">
+'''
+            for path, info in list(link_structure.items())[:8]:
+                count = info.get('count', 0) if isinstance(info, dict) else info
+                examples = info.get('examples', [])[:2] if isinstance(info, dict) else []
+                html += f'''
+                        <div style="margin-bottom:10px;">
+                            <span class="path">{path}</span>
+                            <span style="color:#888;margin-left:10px;">{count} links</span>
+                            {''.join(f'<div style="font-size:0.75rem;color:#666;margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{ex[:80]}...</div>' for ex in examples)}
+                        </div>
+'''
+            html += '''
                     </div>
 '''
 
-        if r['lot_examples']:
+        if r['status'] == 'success' or r.get('include_paths'):
             html += f'''
-                    <div class="section-title">Exemplos de URLs de Lotes</div>
+                    <div class="section-title">✅ Include Paths (usar no crawler)</div>
+                    <div class="paths">
+                        {''.join(f'<span class="path">{p}</span>' for p in r.get('include_paths', []))}
+                    </div>
+'''
+
+        if r.get('lot_examples'):
+            html += f'''
+                    <div class="section-title">📋 Exemplos de URLs de Lotes</div>
                     <div class="examples">
                         {''.join(f'<div class="example-url"><a href="{url}" target="_blank">{url}</a></div>' for url in r['lot_examples'][:10])}
                     </div>
 '''
 
-        if r['crawl_start_urls']:
+        if r.get('crawl_start_urls'):
             html += f'''
                     <div class="crawl-config">
-                        <h4>📋 Configuração para Crawler</h4>
+                        <h4>🚀 Configuração para Crawler</h4>
                         <code>{{
     "start_urls": {json.dumps(r['crawl_start_urls'][:3], ensure_ascii=False)},
-    "include_paths": {json.dumps(r['include_paths'], ensure_ascii=False)}
+    "include_paths": {json.dumps(r.get('include_paths', []), ensure_ascii=False)}
 }}</code>
                     </div>
 '''
 
-        if r['error_message']:
+        # Raw links para debugging
+        raw_links = r.get('raw_links', [])
+        if raw_links:
             html += f'''
-                    <div class="section-title">Erro</div>
+                    <details style="margin-top:15px;">
+                        <summary style="cursor:pointer;color:#888;">🔍 Ver todos os links ({len(raw_links)} encontrados)</summary>
+                        <div class="examples" style="margin-top:10px;max-height:300px;overflow-y:auto;">
+                            {''.join(f'<div class="example-url" style="font-size:0.75rem;"><a href="{url}" target="_blank">{url}</a></div>' for url in raw_links[:50])}
+                        </div>
+                    </details>
+'''
+
+        if r.get('error_message'):
+            html += f'''
+                    <div class="section-title">❌ Erro</div>
                     <div class="examples" style="color: #ff4444;">{r['error_message']}</div>
 '''
 
