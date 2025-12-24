@@ -149,6 +149,12 @@ run_full_analysis.py        # Script principal
 run_analysis.py            # Script alternativo
 ```
 
+## Documento de Arquitetura
+
+Para a especificação detalhada do sistema (modelo de dados, pipeline, UI e APIs), veja:
+
+- `docs/arquitetura_sistema_leiloes.md`
+
 ## Limitações
 
 - Alguns sites podem ter proteção contra bots (Cloudflare, etc.)
